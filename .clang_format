@@ -1,0 +1,7 @@
+---
+IndentWidth: 4
+BreakBeforeBraces: Attach
+IndentCaseLabels: true
+AllowShortFunctionsOnASingleLine: None
+
+# vim: set filetype=yaml:
