@@ -5,6 +5,7 @@
 
 #include <inttypes.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #define STARTING_SIZE 1024
 #define GROWTH_FACTOR 2
@@ -38,5 +39,21 @@ bool insert_value(Map *map, void *key, void *value);
 Item *delete_item(Map *map, void *key);
 
 Item *lookup_key(Map *map, void *key);
+
+typedef struct {
+  Item **buckets;
+  uint64_t current_pos;
+  uint64_t bucket_len;
+} IterMap;
+
+IterMap *create_iter_map(Map *map);
+Item *next_item(IterMap *iter_map);
+
+#define iter_map(_map, _iter) _iter = create_iter_map(_map)
+
+#define for_each(_iter_map, _item)                                             \
+  _iter_map->current_pos = 0;                                                  \
+  for (_item = next_item(_iter_map); _item != NULL;                            \
+       _item = next_item(_iter_map))
 
 #endif

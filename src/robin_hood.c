@@ -104,7 +104,7 @@ bool insert_value(Map *map, void *key, void *value) {
         swap(&value, &item->value);
 
         uint64_t temp_hash = item->hash;
-        item->hash = temp_hash;
+        item->hash = hash;
         hash = temp_hash;
 
         uint64_t temp_probe = item->probe;
@@ -203,6 +203,42 @@ Item *lookup_key(Map *map, void *key) {
       }
 
       probe++;
+    }
+  }
+
+  return item;
+}
+
+IterMap *create_iter_map(Map *map) {
+  IterMap *iter_map = (IterMap *)malloc(sizeof(IterMap));
+
+  if (iter_map == NULL) {
+    return NULL;
+  }
+
+  iter_map->buckets = map->buckets;
+  iter_map->current_pos = 0;
+  iter_map->bucket_len = map->bucket_len;
+
+  return iter_map;
+}
+
+Item *next_item(IterMap *iter_map) {
+  Item *item = NULL;
+
+  bool looking = true;
+
+  while (looking) {
+    if (iter_map->current_pos >= iter_map->bucket_len) {
+      looking = false;
+    } else {
+      item = iter_map->buckets[iter_map->current_pos];
+
+      if (item != NULL) {
+        looking = false;
+      }
+
+      iter_map->current_pos++;
     }
   }
 

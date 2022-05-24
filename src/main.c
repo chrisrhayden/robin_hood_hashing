@@ -38,12 +38,35 @@ int main() {
            *(uint64_t *)item->value);
   }
 
+  int64_t count = 0;
   for (uint64_t i = 100; i < 1100; i++) {
+    count++;
     *key = i;
     printf("deleting key: %lu\n", *key);
 
     delete_item(map, key);
   }
+
+  printf("deleted count: %lu\n", count);
+
+  IterMap *iter = create_iter_map(map);
+
+  item = NULL;
+
+  count = 0;
+  uint64_t big_vlaue = 0;
+  for_each(iter, item) {
+    count++;
+
+    // printf("key: %lu value: %lu\n", *(uint64_t *)item->key, *(uint64_t
+    // *)item->value);
+
+    if (big_vlaue < *(uint64_t *)item->key) {
+      big_vlaue = *(uint64_t *)item->key;
+    }
+  }
+
+  printf("count: %lu big key: %lu\n", count, big_vlaue);
 
   return 0;
 }
