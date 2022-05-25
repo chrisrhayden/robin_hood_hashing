@@ -22,17 +22,15 @@ typedef struct {
 } Item;
 
 typedef uint64_t (*hash_func_t)(void *key);
-typedef bool (*compare_func_t)(void *key_1, void *key_2);
 
 typedef struct {
   Item **buckets;
   uint64_t bucket_len;
   uint64_t bucket_load;
-  compare_func_t compare_func;
   hash_func_t hash_func;
 } Map;
 
-Map *create_map(hash_func_t hash_func, compare_func_t compare_func);
+Map *create_map(hash_func_t hash_func);
 
 bool insert_value(Map *map, void *key, void *value);
 
