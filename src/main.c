@@ -4,69 +4,146 @@
 #include "hash_algos.h"
 #include "robin_hood.h"
 
-uint64_t hash(void *key) { return integer_hash64(*(uint64_t *)key); }
+bool contains(uint64_t **buckets, uint64_t bucket_len, uint64_t value) {
+  bool found = false;
+  for (uint64_t i = 0; i < bucket_len && !found; i++) {
+    found = *buckets[i] == value;
+  }
 
-bool comp(void *key_1, void *key_2) {
-  return *(uint64_t *)key_1 == *(uint64_t *)key_2;
+  return found;
 }
 
-int main() {
-  Map *map = create_map(hash, comp);
+uint64_t hash(void *key) {
+  return integer_hash64(*(uint64_t *)key);
+}
 
-  for (size_t i = 0; i < 20000; i++) {
+bool add_values(Map *map, uint64_t amount) {
+  bool success = true;
+
+  for (uint64_t i = 0; i < amount && success; i++) {
     uint64_t *key = malloc(sizeof(uint64_t));
     *key = i;
 
     uint64_t *value = malloc(sizeof(uint64_t));
     *value = i * 2;
 
-    insert_value(map, key, value);
+    success = insert_value(map, key, value);
   }
 
-  uint64_t *key = malloc(sizeof(uint64_t));
+  return success;
+}
 
-  *key = 100;
+bool remove_values(Map *map, uint64_t **items, uint64_t start, uint64_t stop) {
+  Item *item = NULL;
 
-  printf("Finding key\n");
-  Item *item = lookup_key(map, key);
+  bool found = true;
 
-  if (item == NULL) {
-    printf("%lu dose not exists in hash map\n", *key);
-  } else {
+  uint64_t current = 0;
 
-    printf("key: %lu value: %lu\n", *(uint64_t *)item->key,
-           *(uint64_t *)item->value);
-  }
+  for (uint64_t i = start; i <= stop && found; i++) {
+    printf("looking for: %lu\n", i);
+    item = lookup_key(map, &i);
 
-  int64_t count = 0;
-  for (uint64_t i = 100; i < 1100; i++) {
-    count++;
-    *key = i;
-    printf("deleting key: %lu\n", *key);
-
-    delete_item(map, key);
-  }
-
-  printf("deleted count: %lu\n", count);
-
-  IterMap *iter = create_iter_map(map);
-
-  item = NULL;
-
-  count = 0;
-  uint64_t big_vlaue = 0;
-  for_each(iter, item) {
-    count++;
-
-    // printf("key: %lu value: %lu\n", *(uint64_t *)item->key, *(uint64_t
-    // *)item->value);
-
-    if (big_vlaue < *(uint64_t *)item->key) {
-      big_vlaue = *(uint64_t *)item->key;
+    if (item == NULL) {
+      printf("did not find the item to delete\n");
+      found = false;
     }
   }
 
-  printf("count: %lu big key: %lu\n", count, big_vlaue);
+  for (uint64_t i = start; i <= stop && found; i++) {
+    // printf("removing: %lu\n", i);
 
-  return 0;
+    item = delete_item(map, &i);
+
+    if (item == NULL) {
+      found = false;
+    } else {
+      items[current] = item->key;
+      current++;
+    }
+  }
+
+  return found;
+}
+
+bool map_contains(Map *map, uint64_t **items, uint64_t items_len) {
+  Item *item = NULL;
+  bool finding = true;
+  bool success = false;
+
+  for (uint64_t i = 0; i < items_len && finding; i++) {
+
+    // we reached the end of the item list
+    if (items[i] == NULL) {
+      success = true;
+      finding = false;
+    } else {
+      printf("looking for %lu\n", *items[i]);
+      item = lookup_key(map, items[i]);
+
+      if (item == NULL) {
+        finding = false;
+      }
+    }
+  }
+
+  return success;
+}
+
+bool run() {
+  Map *map = create_map(hash);
+
+  if (add_values(map, 20000) == false) {
+    printf("did not add all items\n");
+    return false;
+  }
+
+  uint64_t **items = (uint64_t **)malloc(sizeof(uint64_t *) * map->bucket_len);
+
+  uint64_t item_value = 100;
+  for (uint64_t i = 0; i <= 1000; i++) {
+    items[i] = malloc(sizeof(uint64_t));
+    *items[i] = item_value;
+    item_value++;
+  }
+
+  if (map_contains(map, items, map->bucket_len)) {
+    printf("found all items\n");
+  } else {
+    printf("did not find all items\n");
+    return false;
+  }
+
+  if (remove_values(map, items, 100, 1100) == false) {
+    printf("did not remove all items\n");
+    return false;
+  }
+
+  if (map_contains(map, items, map->bucket_len)) {
+    printf("found an item that should have been deleted\n");
+    return false;
+  } else {
+    printf("all items where deleted\n");
+  }
+
+  IterMap *iter = create_iter_map(map);
+  Item *item = NULL;
+
+  uint64_t count = 0;
+  for_each(iter, item) {
+    printf("item: %lu\n", *(uint64_t *)item->key);
+    count++;
+  }
+
+  printf("count: %lu\n", count);
+
+  return true;
+}
+
+int main() {
+  if (run()) {
+    return 0;
+  }
+
+  return 1;
 }
