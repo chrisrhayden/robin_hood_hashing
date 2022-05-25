@@ -15,8 +15,19 @@ void swap(void **a, void **b) {
 }
 
 Map *_create_map(hash_func_t hash, uint64_t size) {
-  Map *map = malloc(sizeof(Map));
+  Map *map = (Map *)malloc(sizeof(Map));
+
+  if (map == NULL) {
+    return NULL;
+  }
+
   map->buckets = (Item **)malloc(sizeof(Item *) * size);
+
+  if (map->buckets == NULL) {
+    free(map);
+    return NULL;
+  }
+
   map->bucket_len = size;
   map->bucket_load = 0;
 
@@ -36,6 +47,10 @@ Map *create_map(hash_func_t hash) {
 Item *create_item(void *key, void *value, uint64_t hash, uint64_t probe) {
   Item *item = (Item *)malloc(sizeof(Item));
 
+  if (item == NULL) {
+    return NULL;
+  }
+
   item->key = key;
   item->value = value;
   item->probe = probe;
@@ -48,19 +63,16 @@ bool _insert_value(Item **buckets, uint64_t bucket_len, hash_func_t hash_func,
                    void *key, void *value) {
 
   uint64_t hash = hash_func(key);
-  // uint64_t pos = hash & (bucket_len - 1);
   uint64_t pos = hash % bucket_len;
 
+  uint64_t probe = 0;
   uint64_t current_pos = pos;
 
-  uint64_t probe = 0;
   Item *item = NULL;
-
   bool success = true;
   bool finding_bucket = true;
 
   while (finding_bucket) {
-
     item = buckets[current_pos];
 
     if (item == NULL) {
@@ -117,9 +129,13 @@ bool rehash_map(Map *map) {
     }
   }
 
-  free(map->buckets);
-  map->buckets = new_buckets;
-  map->bucket_len = new_len;
+  if (success) {
+    free(map->buckets);
+    map->buckets = new_buckets;
+    map->bucket_len = new_len;
+  } else {
+    free(new_buckets);
+  }
 
   return true;
 }
@@ -196,15 +212,15 @@ Item *delete_item(Map *map, void *key) {
 Item *lookup_key(Map *map, void *key) {
   uint64_t hash = map->hash_func(key);
   uint64_t pos = hash % map->bucket_len;
-  uint64_t probe = 0;
 
   Item *item = NULL;
 
-  uint64_t current_pos = 0;
-  bool finding_bucket = true;
-  while (finding_bucket) {
-    current_pos = pos + probe % map->bucket_len;
+  uint64_t probe = 0;
+  uint64_t current_pos = pos;
 
+  bool finding_bucket = true;
+
+  while (finding_bucket) {
     item = map->buckets[current_pos];
 
     if (item == NULL) {
@@ -222,6 +238,7 @@ Item *lookup_key(Map *map, void *key) {
       }
 
       probe++;
+      current_pos = (current_pos + 1) % map->bucket_len;
     }
   }
 
