@@ -1,5 +1,5 @@
 ---
-IndentWidth: 4
+IndentWidth: 2
 BreakBeforeBraces: Attach
 IndentCaseLabels: true
 AllowShortFunctionsOnASingleLine: None
