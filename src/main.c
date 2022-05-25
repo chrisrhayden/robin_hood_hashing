@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "hash_algos.h"
 #include "robin_hood.h"
@@ -140,8 +141,35 @@ bool run() {
   return true;
 }
 
+bool speed_test() {
+  clock_t start = clock();
+
+  Map *map = create_map(hash);
+
+  if (add_values(map, 20000) == false) {
+    printf("did not add all items\n");
+    return false;
+  }
+
+  IterMap *iter = create_iter_map(map);
+  Item *item = NULL;
+
+  for_each(iter, item) {
+    if (lookup_key(map, item->key) == false) {
+      printf("did not find item\n");
+      break;
+    }
+  }
+
+  clock_t end = clock();
+
+  printf("Elapsed: %f\n", (double)(end - start) / CLOCKS_PER_SEC);
+
+  return true;
+}
+
 int main() {
-  if (run()) {
+  if (speed_test()) {
     return 0;
   }
 
