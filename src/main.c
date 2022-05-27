@@ -18,6 +18,11 @@ uint64_t hash(void *key) {
   return integer_hash64(*(uint64_t *)key);
 }
 
+void drop_key_value(void *key, void *value) {
+  free(key);
+  free(value);
+}
+
 bool add_values(Map *map, uint64_t amount) {
   bool success = true;
 
@@ -54,7 +59,7 @@ bool remove_values(Map *map, uint64_t **items, uint64_t start, uint64_t stop) {
   for (uint64_t i = start; i <= stop && found; i++) {
     // printf("removing: %lu\n", i);
 
-    item = delete_item(map, &i);
+    // item = delete_item(map, &i);
 
     if (item == NULL) {
       found = false;
@@ -92,7 +97,7 @@ bool map_contains(Map *map, uint64_t **items, uint64_t items_len) {
 }
 
 bool run() {
-  Map *map = create_map(hash);
+  Map *map = create_map(hash, drop_key_value);
 
   if (add_values(map, 20000) == false) {
     printf("did not add all items\n");
@@ -142,11 +147,16 @@ bool run() {
 }
 
 bool speed_test() {
+  // uint64_t one_mill = 1000000;
+  // uint64_t to_add = 100000000;
+  // uint64_t to_add = 1000000;
+  // uint64_t to_add = 1000000;
+  uint64_t to_add = 10000000;
   clock_t start = clock();
 
-  Map *map = create_map(hash);
+  Map *map = create_map(hash, drop_key_value);
 
-  if (add_values(map, 20000) == false) {
+  if (add_values(map, to_add) == false) {
     printf("did not add all items\n");
     return false;
   }
@@ -160,6 +170,30 @@ bool speed_test() {
       break;
     }
   }
+
+  drop_iter_map(iter);
+
+  find_avrage_probe(map);
+
+  uint64_t *key = malloc(sizeof(uint64_t));
+
+  *key = 255;
+
+  void *key_fill = NULL;
+  void *value_fill = NULL;
+
+  if (delete_item(map, key, &key_fill, &value_fill)) {
+    printf("deleting key: %lu value: %lu\n", *(uint64_t *)key_fill,
+           *(uint64_t *)value_fill);
+  }
+
+  free(key);
+
+  free(key_fill);
+
+  free(value_fill);
+
+  drop_map(map);
 
   clock_t end = clock();
 

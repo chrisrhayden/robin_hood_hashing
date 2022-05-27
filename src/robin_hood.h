@@ -22,19 +22,23 @@ typedef struct {
 } Item;
 
 typedef uint64_t (*hash_func_t)(void *key);
+typedef void (*drop_func_t)(void *key, void *value);
 
 typedef struct {
   Item **buckets;
   uint64_t bucket_len;
   uint64_t bucket_load;
   hash_func_t hash_func;
+  drop_func_t drop_func;
 } Map;
 
-Map *create_map(hash_func_t hash_func);
+Map *create_map(hash_func_t hash_func, drop_func_t drop_func);
+void drop_map(Map *map);
 
 bool insert_value(Map *map, void *key, void *value);
 
-Item *delete_item(Map *map, void *key);
+bool delete_item(Map *map, void *key_to_find, void **key_to_fill,
+                 void **value_to_fill);
 
 Item *lookup_key(Map *map, void *key);
 
@@ -45,13 +49,15 @@ typedef struct {
 } IterMap;
 
 IterMap *create_iter_map(Map *map);
+void drop_iter_map(IterMap *iter_map);
 Item *next_item(IterMap *iter_map);
 
-#define iter_map(_map, _iter) _iter = create_iter_map(_map)
-
+// this is actually nice
 #define for_each(_iter_map, _item)                                             \
   _iter_map->current_pos = 0;                                                  \
   for (_item = next_item(_iter_map); _item != NULL;                            \
        _item = next_item(_iter_map))
+
+void find_avrage_probe(Map *map);
 
 #endif
